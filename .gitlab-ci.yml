@@ -1,11 +1,15 @@
 image: docker:latest
 
 services:
-  - docker:dind
+  - name: docker:dind
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
 
 test:
-  stage: test
   tags:
+    - docker
     - docker-atp
   script:
     - docker build -t enki .

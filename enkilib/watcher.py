@@ -52,9 +52,11 @@ def start_container(image, command, args, detach, memory_limit, cpu_limit):
         cfs_quota=cfs_quota,
     )
 
-    container.run(image, command, args, detach, limits)
+    exit_status = container.run(image, command, args, detach, limits)
     if detach:
         print(container.id)
+    else:
+        exit(exit_status)
 
 
 def exec_into_container(container_id, command, args, detach):

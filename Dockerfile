@@ -1,8 +1,7 @@
 FROM library/ubuntu:19.04
 
 RUN apt-get update -y
-RUN apt-get install -y python3 python3-pip curl iproute2 iputils-ping htop strace
-RUN apt-get install -y iptables
+RUN apt-get install -y python3 python3-pip curl iproute2 iputils-ping htop strace iptables
 
 WORKDIR /enki
 

@@ -2,6 +2,7 @@ import uuid
 import os
 import setproctitle
 import pyroute2
+import signal
 from pyroute2 import IPRoute
 from pathlib import Path
 from .utils import *
@@ -207,9 +208,19 @@ class Container:
 
             try:
                 setproctitle.setproctitle("enki: watcher for {}".format(self._id))
-                os.waitpid(self._pid, 0)
+
+                _, status = os.waitpid(self._pid, 0)
                 if detach:
                     exit(0)
+
+                if os.WIFEXITED(status):
+                    exit_status = os.WEXITSTATUS(status)
+                    if exit_status != 0:
+                        print("container abnormally exited, exit status", exit_status)
+                    return exit_status
+                elif os.WIFSIGNALED(status):
+                    print("container was killed by", signal.Signals(os.TERMSIGNAL(status)))
+                    return 127
             finally:
                 self._cleanup()
 
