@@ -45,7 +45,7 @@ def create_container(init_dir):
 def start_container(image, command, args, detach, memory_limit, cpu_limit):
     container = Container.create(image)
 
-    cfs_quota = int(cpu_limit * 100000)
+    cfs_quota = int(cpu_limit * 100000) if cpu_limit is not None else None
     limits = ContainerLimits(
         memory=memory_limit,
         cfs_period=100000,
