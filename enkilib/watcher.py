@@ -7,7 +7,7 @@ import tarfile
 import sys
 from pathlib import Path
 from enkilib.utils import *
-from enkilib.container import Container
+from enkilib.container import Container, ContainerLimits
 
 
 DATA_DIR = Path("/var/lib/enki")
@@ -42,9 +42,17 @@ def create_container(init_dir):
     print(image_id)
 
 
-def start_container(image, command, args, detach):
+def start_container(image, command, args, detach, memory_limit, cpu_limit):
     container = Container.create(image)
-    container.run(image, command, args, detach)
+
+    cfs_quota = int(cpu_limit * 100000)
+    limits = ContainerLimits(
+        memory=memory_limit,
+        cfs_period=100000,
+        cfs_quota=cfs_quota,
+    )
+
+    container.run(image, command, args, detach, limits)
     if detach:
         print(container.id)
 

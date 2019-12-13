@@ -2,6 +2,7 @@
 import sys
 import click
 from enkilib.watcher import *
+from enkilib.utils import parse_memory, parse_cores
 
 
 @click.group()
@@ -33,8 +34,17 @@ def commit(container_id):
 @click.argument("command")
 @click.argument("args", nargs=-1)
 @click.option("--detach", "-d", is_flag=True)
-def run(image, command, args, detach):
-    start_container(image, command, args, detach)
+@click.option("--memory-limit", "-m")
+@click.option("--cpu-limit", "-c")
+def run(image, command, args, detach, memory_limit, cpu_limit):
+    start_container(
+        image,
+        command,
+        args,
+        detach,
+        parse_memory(memory_limit),
+        parse_cores(cpu_limit)
+    )
 
 
 @cli.command("exec")

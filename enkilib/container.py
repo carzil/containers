@@ -5,6 +5,7 @@ import pyroute2
 from pyroute2 import IPRoute
 from pathlib import Path
 from .utils import *
+from .cgroups import Cgroup
 
 
 DATA_DIR = Path("/var/lib/enki")
@@ -22,8 +23,15 @@ def _get_parent_image(image):
         return f.read().strip()
 
 
+class ContainerLimits:
+    def __init__(self, memory, cfs_period, cfs_quota):
+        self.memory = memory
+        self.cfs_period = cfs_period
+        self.cfs_quota = cfs_quota
+
+
 class Container:
-    def __init__(self, id):
+    def __init__(self, id, limits=None):
         self._id = id
         self._dir = CONTAINERS_DIR / self._id
         self._rootfs = self._dir / "rootfs"
@@ -156,7 +164,7 @@ class Container:
 
         self._do_execve(command, args)
 
-    def run(self, image_id, command, args, detach):
+    def run(self, image_id, command, args, detach, limits):
         image_dir = IMAGES_DIR / image_id / "data"
         if not image_dir.exists():
             raise ContainerError("no such image: {}".format(image_id))
@@ -171,15 +179,25 @@ class Container:
 
         self._setup_net_on_host()
 
+        self._cgroup = Cgroup(self._id)
+
+        if limits.memory is not None:
+            self._cgroup.set_memory_limit(limits.memory)
+
+        if limits.cfs_quota is not None and limits.cfs_period is not None:
+            self._cgroup.set_cfs_limits(limits.cfs_period, limits.cfs_quota)
+
         if detach:
             if os.fork() == 0:
                 os.close(0)
             else:
                 return
 
-        unshare(CLONE_NEWCGROUP | CLONE_NEWIPC | CLONE_NEWNS | CLONE_NEWPID | CLONE_NEWUTS)
+        unshare(CLONE_NEWIPC | CLONE_NEWNS | CLONE_NEWPID | CLONE_NEWUTS)
         self._pid = os.fork()
         if self._pid == 0:
+            self._cgroup.attach_me()
+            unshare(CLONE_NEWCGROUP)
             self._setup_net_in_container()
             self._container_trampoline(image_id, command, args, detach)
             exit(1)
@@ -231,11 +249,24 @@ class Container:
 
         try:
             os.unlink(str(self._dir / "pid"))
-        except OSError:
-            pass
+        except OSError as e:
+            print("cannot remove pid file:", e)
 
-        self._cleanup_host_net()
-        pyroute2.netns.remove(self._netns)
+        try:
+            self._cleanup_host_net()
+        except Exception as e:
+            print("cannot cleanup host net:", e)
+
+        try:
+            pyroute2.netns.remove(self._netns)
+        except Exception as e:
+            print("cannot remove netns:", e)
+
+        try:
+            self._cgroup.remove()
+        except Exception as e:
+            print("cannot remove container cgroup:", e)
+
 
     @property
     def id(self):

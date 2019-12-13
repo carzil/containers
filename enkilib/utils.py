@@ -68,3 +68,33 @@ def sethostname(hostname):
 def touch(path):
     with open(path, "w") as f:
         pass
+
+
+UNITS = {
+    "t": 2 ** 40,
+    "g": 2 ** 30,
+    "m": 2 ** 20,
+    "k": 2 ** 10,
+}
+
+
+def parse_memory(s):
+    if s is None:
+        return None
+
+    s = s.lower()
+    if s.isdigit():
+        return int(s)
+    else:
+        unit = s[-1:]
+        return int(s[:-1]) * UNITS[unit]
+
+
+def parse_cores(s):
+    if s is None:
+        return None
+
+    if s[-1] != "c":
+        raise ValueError("invalid cores count: '{}'".format(s))
+
+    return float(s[:-1])
