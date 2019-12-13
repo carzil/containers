@@ -9,7 +9,6 @@ variables:
 
 test:
   tags:
-    - docker
     - docker-atp
   script:
     - docker build -t enki .
