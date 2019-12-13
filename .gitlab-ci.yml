@@ -13,4 +13,4 @@ test:
     - docker-atp
   script:
     - docker build -t enki .
-    - docker run --privileged enki /bin/bash -c "./scripts/create-net.sh && python3 -m pytest ."
+    - docker run --privileged enki /bin/bash -c "./scripts/create-net.sh && python3 -m pytest -s ."
