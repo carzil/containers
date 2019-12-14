@@ -5,6 +5,9 @@ Vagrant.configure(2) do |config|
     s.inline = <<-SHELL
       echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
       echo #{ssh_pub_key} >> /root/.ssh/authorized_keys
+      apt-get update -y
+      apt-get install -y python3-pip python3
+      python3 -m pip install -r /vagrant/requirements.txt
       echo 1 > /proc/sys/net/ipv4/ip_forward
       iptables --flush
       iptables -t nat -A POSTROUTING -o enki0 -j MASQUERADE
